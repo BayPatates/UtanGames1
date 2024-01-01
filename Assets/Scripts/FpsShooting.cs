@@ -6,39 +6,47 @@ using System;
 using Unity.VisualScripting;
 using Unity.VisualScripting.AssemblyQualifiedNameParser;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class FpsShooting : MonoBehaviour
 {
+    float gunTimer;
     float reloadTimer;
     public GameObject impactEffect;
     RaycastHit hit;
     public GameObject RayPoint;
     public bool CanFire = true;
-    float gunTimer;
     public float gunCooldown = 0.1f;
     public ParticleSystem MuzzleFlash;
 
-    [Header("Oyun Sesleri")]
+    public CharacterController Karakter;
+    public Animator GunAnimset;
+
     AudioSource SesKaynak;
+    [Header("Ses Klipleri")]
     public AudioClip FireSound;
+    public AudioClip ReloadSound;
+
+    [Header("Silah Özellikleri")]
     public float range = 500;
-
-
     public int maxAmmo = 999;
     public int ammoInPocket = 120;
     public int ammoInGun = 30;
     public int magazineCapacity = 30;
     public float reloadCooldown = 2;
 
+    [Header("UI Elementleri")]
+    public TextMeshProUGUI ammoCounterText;
+
     // Start is called before the first frame update
     void Start()
     {
         SesKaynak = GetComponent<AudioSource>();
-        SesKaynak.clip = FireSound;
+        UpdateAmmoCounter();
     }
-    // Update is called once per frame
-    //void Update() {}
 
+    // Update is called once per frame
     void Update()
     {
         if (Input.GetKey(KeyCode.Mouse0) && CanFire == true && Time.time > gunTimer && ammoInGun > 0)
@@ -48,16 +56,18 @@ public class FpsShooting : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.R))
         {
-            if (Time.time > reloadTimer) {
+            if (Time.time > reloadTimer)
+            {
                 StartCoroutine(ReloadGun());
-                reloadTimer = Time.time + reloadCooldown;
             }
         }
     }
 
     void Fire()
     {
+        SesKaynak.PlayOneShot(FireSound);
         ammoInGun -= 1;
+        UpdateAmmoCounter();
         MuzzleFlash.Play();
         SesKaynak.Play();
         if (Physics.Raycast(RayPoint.transform.position, RayPoint.transform.forward, out hit, range))
@@ -65,25 +75,63 @@ public class FpsShooting : MonoBehaviour
 
             //Debug.Log(hit.transform.name);
             Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
-            //Debug.LogFormat("Ammo Amount: " + ammoInGun.ToString());
         }
     }
 
     IEnumerator ReloadGun()
     {
+        //Reload gerekip gerekmediğini test et ve ne kadar gerektiğini hesapla.
+        //Ayrıca kullanıcıyı bilgilendir.
         Debug.Log("Enumerator called.");
-        CanFire = false;
-        if (ammoInPocket < 1) { print("Not enough ammo."); yield return 0; }
+        if (ammoInPocket < 1)
+        {
+            print("Not enough ammo.");
+            ammoCounterText.color = Color.red;
+            yield return new WaitForSeconds(0.2f);
+            ammoCounterText.color = Color.white;
+            yield return new WaitForSeconds(0.2f);
+            ammoCounterText.color = Color.red;
+            yield return new WaitForSeconds(0.2f);
+            ammoCounterText.color = Color.white;
+            yield return new WaitForSeconds(0.2f);
+            yield break;
+        }
         int neededAmmoAmount = Mathf.Min(ammoInPocket, magazineCapacity - ammoInGun);
-        if (neededAmmoAmount < 1) { print("No need for reload."); yield return 0; }
+        if (neededAmmoAmount < 1)
+        {
+            print("No need for reload.");
+            ammoCounterText.color = Color.green;
+            yield return new WaitForSeconds(0.2f);
+            ammoCounterText.color = Color.white;
+            yield return new WaitForSeconds(0.2f);
+            ammoCounterText.color = Color.green;
+            yield return new WaitForSeconds(0.2f);
+            ammoCounterText.color = Color.white;
+            yield return new WaitForSeconds(0.2f);
+            yield break;
+        }
 
+        //Reload etmeye başla.
         Debug.Log("Reloading...");
+        GunAnimset.Play("Reload");
+        GunAnimset.SetBool("isReloading", true);
+        reloadTimer = Time.time + reloadCooldown;
+        CanFire = false;
+        SesKaynak.PlayOneShot(ReloadSound);
         yield return new WaitForSeconds(reloadCooldown);
 
         ammoInGun += neededAmmoAmount;
         ammoInPocket -= neededAmmoAmount;
 
+        UpdateAmmoCounter();
         CanFire = true;
+        GunAnimset.SetBool("isReloading", false);
         Debug.Log("Reload Complete!");
+    }
+
+    //Kanvas'ta bulunan mermi sayısını güncelle
+    void UpdateAmmoCounter()
+    {
+        ammoCounterText.text = ammoInGun.ToString() + "/" + ammoInPocket.ToString();
     }
 }
