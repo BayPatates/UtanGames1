@@ -9,6 +9,7 @@ using UnityEngine;
 
 public class FpsShooting : MonoBehaviour
 {
+    float reloadTimer;
     public GameObject impactEffect;
     RaycastHit hit;
     public GameObject RayPoint;
@@ -33,6 +34,7 @@ public class FpsShooting : MonoBehaviour
     void Start()
     {
         SesKaynak = GetComponent<AudioSource>();
+        SesKaynak.clip = FireSound;
     }
     // Update is called once per frame
     //void Update() {}
@@ -46,7 +48,10 @@ public class FpsShooting : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.R))
         {
-            ReloadGun();
+            if (Time.time > reloadTimer) {
+                StartCoroutine(ReloadGun());
+                reloadTimer = Time.time + reloadCooldown;
+            }
         }
     }
 
@@ -55,7 +60,6 @@ public class FpsShooting : MonoBehaviour
         ammoInGun -= 1;
         MuzzleFlash.Play();
         SesKaynak.Play();
-        SesKaynak.clip = FireSound;
         if (Physics.Raycast(RayPoint.transform.position, RayPoint.transform.forward, out hit, range))
         {
 
@@ -65,13 +69,21 @@ public class FpsShooting : MonoBehaviour
         }
     }
 
-    public void ReloadGun()
+    IEnumerator ReloadGun()
     {
-        if (ammoInPocket < 1) { print("Not enough ammo."); return; }
+        Debug.Log("Enumerator called.");
+        CanFire = false;
+        if (ammoInPocket < 1) { print("Not enough ammo."); yield return 0; }
         int neededAmmoAmount = Mathf.Min(ammoInPocket, magazineCapacity - ammoInGun);
+        if (neededAmmoAmount < 1) { print("No need for reload."); yield return 0; }
 
-        if (neededAmmoAmount < 1) { print("No need for reload."); return; }
+        Debug.Log("Reloading...");
+        yield return new WaitForSeconds(reloadCooldown);
+
         ammoInGun += neededAmmoAmount;
         ammoInPocket -= neededAmmoAmount;
+
+        CanFire = true;
+        Debug.Log("Reload Complete!");
     }
 }
