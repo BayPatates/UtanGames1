@@ -14,6 +14,8 @@ public class FpsShooting : MonoBehaviour
     float gunTimer;
     float reloadTimer;
     public GameObject impactEffect;
+    public GameObject BloodyimpactEffect;
+
     RaycastHit hit;
     RaycastHit pickUpHit;
     public GameObject RayPoint;
@@ -38,6 +40,7 @@ public class FpsShooting : MonoBehaviour
     public int ammoInGun = 30;
     public int magazineCapacity = 30;
     public float reloadCooldown = 2;
+    public float damage;
 
     [Header("UI Elementleri")]
     public TextMeshProUGUI ammoCounterText;
@@ -88,8 +91,18 @@ public class FpsShooting : MonoBehaviour
         if (Physics.Raycast(RayPoint.transform.position, RayPoint.transform.forward, out hit, range))
         {
 
-            //Debug.Log(hit.transform.name);
+
+        if (hit.collider.tag == "Untagged")
+        {
             Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+        }
+        else if (hit.collider.tag == "Enemy")
+        {
+            Instantiate(BloodyimpactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+            hit.collider.gameObject.transform.root.GetComponent<ZombieScript>().health = hit.collider.gameObject.transform.root.GetComponent<ZombieScript>().health - damage;
+        }
+
+
         }
     }
 
