@@ -15,10 +15,13 @@ public class FpsShooting : MonoBehaviour
     float reloadTimer;
     public GameObject impactEffect;
     RaycastHit hit;
+    RaycastHit pickUpHit;
     public GameObject RayPoint;
+    public GameObject mainRayPoint;
     public bool CanFire = true;
     public float gunCooldown = 0.1f;
     public ParticleSystem MuzzleFlash;
+    public float pickUpRange = 1.5f;
 
     public CharacterController Karakter;
     public Animator GunAnimset;
@@ -30,7 +33,7 @@ public class FpsShooting : MonoBehaviour
 
     [Header("Silah Özellikleri")]
     public float range = 500;
-    public int maxAmmo = 999;
+    public int maxAmmo = 150;
     public int ammoInPocket = 120;
     public int ammoInGun = 30;
     public int magazineCapacity = 30;
@@ -61,6 +64,18 @@ public class FpsShooting : MonoBehaviour
                 StartCoroutine(ReloadGun());
             }
         }
+
+        if (Physics.Raycast(mainRayPoint.transform.position, mainRayPoint.transform.forward, out pickUpHit, pickUpRange))
+        {
+            if (Input.GetKeyDown(KeyCode.E) && pickUpHit.collider.gameObject.tag == "ammo")
+            {
+                ammoInPocket += magazineCapacity;
+                ammoInPocket = Mathf.Min(ammoInPocket, maxAmmo);
+                UpdateAmmoCounter();
+            }
+            //Debug.Log(hit.transform.name);
+            //Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+        }
     }
 
     void Fire()
@@ -82,10 +97,9 @@ public class FpsShooting : MonoBehaviour
     {
         //Reload gerekip gerekmediğini test et ve ne kadar gerektiğini hesapla.
         //Ayrıca kullanıcıyı bilgilendir.
-        Debug.Log("Enumerator called.");
         if (ammoInPocket < 1)
         {
-            print("Not enough ammo.");
+            //print("Not enough ammo.");
             ammoCounterText.color = Color.red;
             yield return new WaitForSeconds(0.2f);
             ammoCounterText.color = Color.white;
@@ -99,7 +113,7 @@ public class FpsShooting : MonoBehaviour
         int neededAmmoAmount = Mathf.Min(ammoInPocket, magazineCapacity - ammoInGun);
         if (neededAmmoAmount < 1)
         {
-            print("No need for reload.");
+            //print("No need for reload.");
             ammoCounterText.color = Color.green;
             yield return new WaitForSeconds(0.2f);
             ammoCounterText.color = Color.white;
@@ -112,7 +126,7 @@ public class FpsShooting : MonoBehaviour
         }
 
         //Reload etmeye başla.
-        Debug.Log("Reloading...");
+        //Debug.Log("Reloading...");
         GunAnimset.Play("Reload");
         GunAnimset.SetBool("isReloading", true);
         reloadTimer = Time.time + reloadCooldown;
@@ -126,7 +140,7 @@ public class FpsShooting : MonoBehaviour
         UpdateAmmoCounter();
         CanFire = true;
         GunAnimset.SetBool("isReloading", false);
-        Debug.Log("Reload Complete!");
+        //Debug.Log("Reload Complete!");
     }
 
     //Kanvas'ta bulunan mermi sayısını güncelle
