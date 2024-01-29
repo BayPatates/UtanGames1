@@ -88,22 +88,20 @@ public class FpsShooting : MonoBehaviour
         UpdateAmmoCounter();
         MuzzleFlash.Play();
         SesKaynak.Play();
+
         if (Physics.Raycast(RayPoint.transform.position, RayPoint.transform.forward, out hit, range))
         {
-
-
-        if (hit.collider.tag == "Untagged")
-        {
-            Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+            if (hit.collider.tag == "Untagged")
+            {
+                Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+            }
+            else if (hit.collider.tag == "Enemy")
+            {
+                Instantiate(BloodyimpactEffect, hit.point, Quaternion.LookRotation(hit.normal));
+                hit.collider.gameObject.transform.root.GetComponent<ZombieScript>().health = hit.collider.gameObject.transform.root.GetComponent<ZombieScript>().health - damage;
+            }
         }
-        else if (hit.collider.tag == "Enemy")
-        {
-            Instantiate(BloodyimpactEffect, hit.point, Quaternion.LookRotation(hit.normal));
-            hit.collider.gameObject.transform.root.GetComponent<ZombieScript>().health = hit.collider.gameObject.transform.root.GetComponent<ZombieScript>().health - damage;
-        }
-
-
-        }
+        
     }
 
     IEnumerator ReloadGun()
